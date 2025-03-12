@@ -38,6 +38,7 @@ RUN zypper --non-interactive --gpg-auto-import-keys install --no-recommends -- \
       snapper \
       firewalld \
       podman \
+      git \
       NetworkManager && \
     zypper clean --all
 

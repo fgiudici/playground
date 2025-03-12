@@ -38,11 +38,12 @@ RUN zypper --non-interactive --gpg-auto-import-keys install --no-recommends -- \
       snapper \
       firewalld \
       podman \
+      git \
       NetworkManager && \
     zypper clean --all
 
 # Allow root login in SSH
-RUN echo "PermitRootLogin yes" >> /etc/ssh/ssh_config.d/50-root-login.conf
+RUN echo "PermitRootLogin yes" >> /etc/ssh/sshd_config.d/50-root-login.conf
 
 # Install EFI binaries at /boot/efi/EFI/BOOT
 RUN mkdir -p /boot/efi/EFI/BOOT && \
