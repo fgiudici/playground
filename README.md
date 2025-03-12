@@ -21,10 +21,10 @@ a couple of images to exercise the `builder.sh` and `updater.sh`.
 
 ## Immutable concept
 
-As immutable linux it is assumed `/` is a read-only filesystem. However to make the system usable there are certain paths with are read-write.
+As immutable linux it is assumed `/` is a read-only filesystem. However to make the system usable there are certain paths which are read-write.
 The root `/` filesystem is snapshotted, meaning each update represents an independent bucket for `/`. RW areas can be of two different types, they
-can be snapshotted (meaning snapshots across updates are kept and tied with its particular `/` snapshot) or, alternatively, they can be
-simple RW buckets shared across all `/` snapshots.
+can be snapshotted (meaning snapshots across updates are kept and tied with its particular root `/` snapshot) or, alternatively, they can be
+simple RW buckets aside shared across all `/` snapshots.
 
 This experiment does not consider ephemeral areas.
 
