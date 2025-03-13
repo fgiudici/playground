@@ -65,6 +65,9 @@ rm -rf /.snapshot/<snapID>
 * In the current logic of this example any changes to RW snapshotted areas after upgrading and before rebooting are lost. This is by desing and it could be considered a feature too.
 * Requires fstab generation/maintenace for each OS upgrade (there is an explicit reference to the default repo snapshot). It should not be a big deal though, we have to generate
   it in any case for the installation phase.
+* Rolling back the nested RW snapshots can't be done with `snapper rollback` for this the actual nested subvolume would require to be a snapshot itself. I did not consider this
+  option because then the default mount of root `/` would not include nested volumes at the right location. In any case rolling back /etc without rolling back the full root `/` is
+  not something that should not happen, it could be handy for trouble shooting, but not as an automated regular operation as part of a fallback or upgrade OS mechanism.
 
 ## Running a test (validated on TW only)
 
