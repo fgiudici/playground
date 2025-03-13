@@ -60,7 +60,7 @@ snapper modify --read-write <snapID>
 btrfs subvolume delete -c -R /.snapshots/<snapID>/snapshot
 rm -rf /.snapshot/<snapID>
 ```
-* RW snapshotted paths are likely innefficient at disk. Stock data gets updated by user config on Snap 1. Stock data in Snap 2 is snapshot of stock data in 1 plus the diff from
+* RW snapshotted paths are likely to be innefficient at disk. Stock data gets updated by user config on Snap 1. Stock data in Snap 2 is snapshot of stock data in 1 plus the diff from
   stock data of the new img. Then stock data in Snap 2 is merged with user additions done at config time, I'd assume this second delta is duplicated at disk.
 * In the current logic of this example any changes to RW snapshotted areas after upgrading and before rebooting are lost. This is by desing and it could be considered a feature too.
 * Requires fstab generation/maintenace for each OS upgrade (there is an explicit reference to the default repo snapshot). It should not be a big deal though, we have to generate
