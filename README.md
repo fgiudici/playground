@@ -44,7 +44,7 @@ snapper subvolumes `/@/.snapshots/1/snapshot/etc/.snapshots` and `/@/.snapshots/
 # List `/` snapshots
 snapper list
 
-# List `/etc` snapshots
+# List `/etc` snapshots, only those available within the current root '/' snapshot
 snapper -c etc list
 ```
 * We keep track of stock RW content for snapshotted contents (origianl /etc is kept for each update) which allows to consider multiple merging strategies.
