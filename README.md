@@ -12,7 +12,7 @@ be used to configure the system and preload data. Note the chroot enviroment is 
 
 The immutability is based on btrfs snapshots which are managed by snapper, hence both tools are required in the host and in the target OS.
 
-Both scripts require a unique paramter which is the image reference of the local podman storage. None of the scripts cover OCI image extraction
+Both scripts require a unique parameter which is the image reference of the local podman storage. None of the scripts cover OCI image extraction
 they just relay on `podman image mount`.
 
 The repository also includes two different Dockerfiles to build images to test upgrades. The `Dockerfile` includes a generic TW based OS and the
@@ -47,7 +47,7 @@ snapper list
 # List `/etc` snapshots, only those available within the current root '/' snapshot
 snapper -c etc list
 ```
-* We keep track of stock RW content for snapshotted contents (origianl /etc is kept for each update) which allows to consider multiple merging strategies.
+* We keep track of stock RW content for snapshotted contents (original /etc is kept for each update) which allows to consider multiple merging strategies.
 * If `/etc` is a RW snapshotted area it does not require specific treatment, we can snapshot `/etc` and any other path we consider (`/root`, `/home`, etc.).
 * Easy rollback, in order to roll back to a previous snapshot we can just run `snapper modify --default <snapID>` and reboot.
 
@@ -60,7 +60,7 @@ snapper modify --read-write <snapID>
 btrfs subvolume delete -c -R /.snapshots/<snapID>/snapshot
 rm -rf /.snapshot/<snapID>
 ```
-* RW snapshotted paths are likely to be innefficient at disk. Stock data gets updated by user config on Snap 1. Stock data in Snap 2 is snapshot of stock data in 1 plus the diff from
+* RW snapshotted paths are likely to be inefficient at disk. Stock data gets updated by user config on Snap 1. Stock data in Snap 2 is snapshot of stock data in 1 plus the diff from
   stock data of the new img. Then stock data in Snap 2 is merged with user additions done at config time, I'd assume this second delta is duplicated at disk.
 * In the current logic of this example any changes to RW snapshotted areas after upgrading and before rebooting are lost. This is by desing and it could be considered a feature too.
 * Requires fstab generation/maintenace for each OS upgrade (there is an explicit reference to the default repo snapshot). It should not be a big deal though, we have to generate
@@ -141,7 +141,7 @@ partitions:
   # Any ARM image is likely to require pretty specific setup
   startSector: 2048
   
-- lable: RECOVERY
+- label: RECOVERY
 
   # Size zero could imply size it according to contents
   size: 0
