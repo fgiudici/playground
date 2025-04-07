@@ -7,7 +7,8 @@ SCRIPT_PATH="$(dirname "${SCRIPT}")"
 
 image=$1
 
-img_mnt=$(podman image mount "${image}") || exit 1
+srcdir="$(mktemp -d)"
+./elemental unpack-image --image=${image} --target=${srcdir} --local
 
 qemu-img create -f raw disk.img 10G
 loopdev=$(losetup -f --show disk.img)
@@ -20,7 +21,7 @@ mkfs.btrfs -L SYSTEM "${loopdev}p2" -f
 partx -u "${loopdev}"
 
 workdir=/mnt/root
-srcdir="${img_mnt}"
+bootdir=/mnt/boot
 
 mkdir -p "${workdir}"
 mount "${loopdev}p2" "${workdir}"
@@ -53,7 +54,7 @@ EOF
 
 
 # RW volumes shared across all snapshots
-rw_volumes=("srv" "home" "opt" "root" "var" "boot/grub2/x86_64-efi")
+rw_volumes=("srv" "home" "opt" "root" "var" )
 
 # RW snapshotted subvolumes
 rw_snap_volumes=("etc")
@@ -72,10 +73,6 @@ for volpath in "${rw_snap_volumes[@]}"; do
   btrfs subvolume create "${workdir}/@/.snapshots/1/snapshot/${volpath}"
 done
 
-
-# Bind mount persistent subvolume and EFI partition at "${workdir}/@/.snapshots/1/snapshot"
-mkdir -p "${workdir}/@/.snapshots/1/snapshot/boot/efi"
-mount -t vfat "${loopdev}p1" "${workdir}/@/.snapshots/1/snapshot/boot/efi"
 
 for volpath in "${rw_volumes[@]}"; do
   mkdir -p "${workdir}/@/.snapshots/1/snapshot/${volpath}"
@@ -104,8 +101,11 @@ for volpath in "${rw_snap_volumes[@]}"; do
 done
 
 
-# TODO consider bootloader install
-
+# Install bootloader
+mkdir -p "${bootdir}"
+mount -t vfat "${loopdev}p1" "${bootdir}"
+cp -r "${srcdir}"/boot/* ${bootdir}/
+umount "${bootdir}"
 
 # Create fstab
 {
@@ -118,7 +118,7 @@ done
   for volpath in "${rw_snap_volumes[@]}"; do
     echo "LABEL=SYSTEM /${volpath} btrfs defaults,subvol=@/.snapshots/1/snapshot/${volpath} 0 0"
   done
-  echo "LABEL=EFI  /boot/efi vfat defaults 0 0"
+  echo "LABEL=EFI  /boot vfat defaults 0 0"
 
 } > "${workdir}/@/.snapshots/1/snapshot/etc/fstab"
 
@@ -131,11 +131,13 @@ btrfs property set "${workdir}/@/.snapshots/1/snapshot" ro true
 if [ -f "${SCRIPT_PATH}/config.sh" ]; then
   mkdir -p "${workdir}/@/.snapshots/1/snapshot/var/tmp-builder-config"
   cp "${SCRIPT_PATH}/config.sh" "${workdir}/@/.snapshots/1/snapshot/var/tmp-builder-config"
+  cp /etc/resolv.conf "${workdir}/@/.snapshots/1/snapshot/etc/resolv.conf"
   mount -t proc /proc "${workdir}/@/.snapshots/1/snapshot/proc"
   mount -t sysfs /sys "${workdir}/@/.snapshots/1/snapshot/sys"
   mount --bind /dev "${workdir}/@/.snapshots/1/snapshot/dev"
   mount --bind /dev/pts "${workdir}/@/.snapshots/1/snapshot/dev/pts"
   chroot "${workdir}/@/.snapshots/1/snapshot" /var/tmp-builder-config/config.sh
+  rm "${workdir}/@/.snapshots/1/snapshot/etc/resolv.conf"
   umount "${workdir}/@/.snapshots/1/snapshot/dev/pts"
   umount "${workdir}/@/.snapshots/1/snapshot/dev"
   umount "${workdir}/@/.snapshots/1/snapshot/sys"
@@ -145,7 +147,6 @@ fi
 
 
 # Umount everything
-umount "${workdir}/@/.snapshots/1/snapshot/boot/efi"
 umount "${workdir}/@/.snapshots/1/snapshot/.snapshots"
 for volpath in "${rw_volumes[@]}"; do
   umount "${workdir}/@/.snapshots/1/snapshot/${volpath}"
@@ -158,4 +159,4 @@ umount "${workdir}"
 
 losetup -d "${loopdev}"
 
-podman image umount "${image}"
+rm -rf "${srcdir}"
