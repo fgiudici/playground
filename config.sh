@@ -33,7 +33,7 @@ WantedBy=sysinit.target
 END
 
 mkdir /etc/extensions
-curl --output-dir /etc/extensions/ -LO https://download.opensuse.org/repositories/home:/fgiudici:/UC/sysext/rke2-6.1.x86-64.raw
+curl --output-dir /etc/extensions/ -LO https://download.opensuse.org/repositories/home:/fgiudici:/UC/sysext/rke2-6.3.x86-64.raw
 
 systemctl enable systemd-sysext
 systemctl enable ensure-sysext

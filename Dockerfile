@@ -42,33 +42,29 @@ RUN zypper --non-interactive --gpg-auto-import-keys install --no-recommends -- \
       NetworkManager && \
     zypper clean --all
 
-# Install EFI binaries at /boot/efi/EFI/BOOT
-RUN mkdir -p /boot/efi/EFI/BOOT && \
-    cp /usr/share/efi/x86_64/MokManager.efi /boot/efi/EFI/BOOT/ && \
-    cp /usr/share/efi/x86_64/shim.efi /boot/efi/EFI/BOOT/bootx64.efi && \
-    cp /usr/share/grub2/x86_64-efi/grub.efi /boot/efi/EFI/BOOT/
-
-# Install grub2 fonts
-RUN mkdir -p /boot/grub2/fonts && \
-    cp /usr/share/grub2/unicode.pf2 /boot/grub2/fonts
-
-# Generate initrd and kernel and initrd links
-RUN kernel=$(ls /boot/vmlinuz-* | head -n1) && \ 
-    dracut -f --no-hostonly "/boot/initrd-${kernel##/boot/vmlinuz-}" "${kernel##/boot/vmlinuz-}" && \
-    ln -s "/boot/initrd-${kernel##/boot/vmlinuz-}" /boot/initrd && \
-    ln -sf "${kernel}" /boot/vmlinuz
-
 # Set default parameters for grub2
 RUN echo 'GRUB_GFXMODE=auto'                  >> /etc/default/grub && \
     echo 'GRUB_TERMINAL_INPUT="console"'      >> /etc/default/grub && \
-    echo 'GRUB_TERMINAL_OUTPUT="gfxterm"'     >> /etc/default/grub && \
-    echo 'SUSE_BTRFS_SNAPSHOT_BOOTING=true'   >> /etc/default/grub
+    echo 'GRUB_TERMINAL_OUTPUT="gfxterm"'     >> /etc/default/grub
 
-# Include grub setup. Ideally this could be substituted by a grub2-mkconfig call
-# but I could not manage to get it working inside the container neither in a chroot
-# enviroment as part of the builder.sh script
-COPY grub.cfg /boot/grub2/grub.cfg
-COPY early-grub.cfg /boot/efi/EFI/BOOT/grub.cfg
+RUN source /etc/os-release && \
+    rm -rf /boot/* && rm -rf /boot/.* && \
+    kernel_version=$(ls /usr/lib/modules | head -n1) && \
+    mkdir -p /boot/${ID}/${kernel_version} && \
+    dracut -f --no-hostonly "/boot/${ID}/${kernel_version}/initrd" "${kernel_version}"  && \
+    cp "/usr/lib/modules/${kernel_version}/vmlinuz" "/boot/${ID}/${kernel_version}/vmlinuz" && \
+    grub2-editenv /boot/grubenv set entries="active snap_1 snap_2" && \
+    mkdir -p /boot/loader/entries && \
+    grub2-editenv /boot/loader/entries/active.conf set display_name="openSUSE Tumbleweed" linux="/${ID}/${kernel_version}/vmlinuz" initrd="/${ID}/${kernel_version}/initrd" cmdline="root=LABEL=SYSTEM rw" && \
+    grub2-editenv /boot/loader/entries/snap_1.conf set display_name="Snapshot 1 - Read Only" linux="/${ID}/${kernel_version}/vmlinuz" initrd="/${ID}/${kernel_version}/initrd" cmdline="root=LABEL=SYSTEM ro" && \
+    grub2-editenv /boot/loader/entries/snap_2.conf set display_name="Snapshot 2 - break pre-pivot" linux="/${ID}/${kernel_version}/vmlinuz" initrd="/${ID}/${kernel_version}/initrd" cmdline="root=LABEL=SYSTEM ro rd.shell rd.break=pre-pivot" && \
+    mkdir -p /boot/EFI/BOOT && \
+    cp /usr/share/efi/x86_64/MokManager.efi /boot/EFI/BOOT/ && \
+    cp /usr/share/efi/x86_64/shim.efi /boot/EFI/BOOT/bootx64.efi && \
+    cp /usr/share/grub2/x86_64-efi/grub.efi /boot/EFI/BOOT/
+
+
+COPY grub.cfg /boot/EFI/BOOT/grub.cfg
 
 # Copying it to /root as this is a RW volume, handy for debugging and hacking
 COPY updater.sh /root/updater.sh
