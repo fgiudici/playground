@@ -33,7 +33,11 @@ WantedBy=sysinit.target
 END
 
 mkdir /etc/extensions
-curl --output-dir /etc/extensions/ -LO https://download.opensuse.org/repositories/home:/fgiudici:/UC/sysext/rke2-6.3.x86-64.raw
+
+RKE2_VERSION=$(curl -s https://download.opensuse.org/repositories/home:/fgiudici:/UC/sysext/ | grep rke2 | head -n 1)
+RKE2_VERSION=${RKE2_VERSION##*rke2}
+RKE2_VERSION=${RKE2_VERSION%%.raw*}
+curl --output-dir /etc/extensions/ -LO https://download.opensuse.org/repositories/home:/fgiudici:/UC/sysext/rke2${RKE2_VERSION}.raw
 
 systemctl enable systemd-sysext
 systemctl enable ensure-sysext
